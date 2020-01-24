@@ -234,12 +234,11 @@
       "runAfterFinish": true,
       "installerIcon": "./scripts/config/resources/icon.ico",
       "uninstallerIcon": "./scripts/config/resources/icon.ico",
-      "installerHeader": "./sripts/config/resources/nsis/installerHeader.bmp",
-      "installerSidebar": "./sripts/config/resources/nsis/installerSidebar.bmp",
-      "uninstallerSidebar": "./sripts/config/resources/nsis/installerSidebar.bmp",
+      "uninstallerSidebar": "./scripts/config/resources/nsis/installerSidebar.bmp",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Bot Framework Emulator (V4)"
+      "shortcutName": "Bot Framework Emulator (V4)",
+      "oneClick": false
     },
     "mac": {
       "artifactName": "BotFramework-Emulator-${version}-mac.${ext}",
