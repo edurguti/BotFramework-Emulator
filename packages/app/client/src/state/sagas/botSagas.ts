@@ -111,6 +111,10 @@ export class BotSagas {
     };
     let res: Response = yield ConversationService.startConversation(serverUrl, payload);
     if (!res.ok) {
+      if (res.body) {
+        const err = yield res.json();
+        console.log(err);
+      }
       throw new Error(
         `Error occurred while starting a new conversation: ${res.status}: ${res.statusText || 'No status text'}`
       );
@@ -146,6 +150,10 @@ export class BotSagas {
     // call emulator to report proper status to chat panel (listening / ngrok)
     res = yield ConversationService.sendInitialLogReport(serverUrl, conversationId, action.payload.endpoint);
     if (!res.ok) {
+      if (res.body) {
+        const err = yield res.json();
+        console.log(err);
+      }
       throw new Error(
         `Error occurred while sending the initial log report: ${res.status}: ${res.statusText || 'No status text'}`
       );
@@ -154,6 +162,10 @@ export class BotSagas {
     // send CU or debug INSPECT message
     res = yield ChatSagas.sendInitialActivity({ conversationId, members, mode: action.payload.mode });
     if (!res.ok) {
+      if (res.body) {
+        const err = yield res.json();
+        console.log(err);
+      }
       throw new Error(
         `Error occurred while sending the initial activity: ${res.status}: ${res.statusText || 'No status text'}`
       );
