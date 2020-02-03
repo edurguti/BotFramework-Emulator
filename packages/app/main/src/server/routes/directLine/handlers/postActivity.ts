@@ -35,6 +35,9 @@ import { LogLevel, textItem } from '@bfemulator/sdk-shared';
 import { Activity } from 'botframework-schema';
 import * as HttpStatus from 'http-status-codes';
 import { Next, Request, Response } from 'restify';
+import { app } from 'electron';
+import { join } from 'path';
+import { appendFileSync } from 'fs-extra';
 
 import { Conversation } from '../../../state/conversation';
 import { sendErrorResponse } from '../../../utils/sendErrorResponse';
@@ -66,7 +69,13 @@ export function createPostActivityHandler(emulatorServer: EmulatorRestServer) {
         if (statusCode === HttpStatus.UNAUTHORIZED || statusCode === HttpStatus.FORBIDDEN) {
           logMessage(req.params.conversationId, textItem(LogLevel.Error, 'Cannot post activity. Unauthorized.'));
         }
-        res.send(statusCode || HttpStatus.INTERNAL_SERVER_ERROR, await response.text());
+        debugObject(response);
+        logMessage(req.params.conversationId, textItem(LogLevel.Debug, `Wrote debug info to ${debugLogPath}.`));
+        try {
+          res.send(statusCode || HttpStatus.INTERNAL_SERVER_ERROR, await response.text());
+        } catch (e) {
+          res.send(statusCode || HttpStatus.INTERNAL_SERVER_ERROR, `Failed to send response.text() with error: ${e}`);
+        }
       } else {
         res.send(statusCode, { id: activityId });
 
@@ -88,4 +97,23 @@ export function createPostActivityHandler(emulatorServer: EmulatorRestServer) {
     res.end();
     next();
   };
+}
+
+const debugLogPath = join(app.getAppPath(), 'debug-log.txt');
+function debugObject(obj) {
+  console.log(`Writing debug info to ${debugLogPath}...`);
+  appendFileSync(debugLogPath, printObj(obj));
+  console.log(`Wrote debug info to ${debugLogPath}.`);
+}
+
+function printObj(obj) {
+  if (typeof obj === 'object') {
+    const out = {};
+    for (const key in obj) {
+      out[key] = JSON.stringify(obj[key]);
+    }
+    return JSON.stringify(out, undefined, 4);
+  } else {
+    return JSON.stringify(obj);
+  }
 }
