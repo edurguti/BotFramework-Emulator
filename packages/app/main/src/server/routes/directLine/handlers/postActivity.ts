@@ -31,19 +31,20 @@
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
+import { join } from 'path';
+
 import { LogLevel, textItem } from '@bfemulator/sdk-shared';
 import { Activity } from 'botframework-schema';
 import * as HttpStatus from 'http-status-codes';
 import { Next, Request, Response } from 'restify';
-import { app } from 'electron';
-import { join } from 'path';
-import { appendFileSync } from 'fs-extra';
+import { appendFileSync, closeSync, existsSync, openSync } from 'fs';
 
 import { Conversation } from '../../../state/conversation';
 import { sendErrorResponse } from '../../../utils/sendErrorResponse';
 import { statusCodeFamily } from '../../../utils/statusCodeFamily';
 import { EmulatorRestServer } from '../../../restServer';
 import { WebSocketServer } from '../../../webSocketServer';
+import { ensureStoragePath } from '../../../../utils/ensureStoragePath';
 
 export function createPostActivityHandler(emulatorServer: EmulatorRestServer) {
   const { logMessage } = emulatorServer.logger;
@@ -99,10 +100,25 @@ export function createPostActivityHandler(emulatorServer: EmulatorRestServer) {
   };
 }
 
-const debugLogPath = join(app.getAppPath(), 'debug-log.txt');
+const debugLogPath = join(ensureStoragePath(), 'debug-log.txt');
 function debugObject(obj) {
   console.log(`Writing debug info to ${debugLogPath}...`);
-  appendFileSync(debugLogPath, printObj(obj));
+  try {
+    appendFileSync(debugLogPath, printObj(obj));
+  } catch (e) {
+    console.error(`Got error ${e} while trying to write debug info to log.`);
+    try {
+      if (!existsSync(debugLogPath)) {
+        const fd = openSync(debugLogPath, 'a');
+        appendFileSync(fd, printObj(obj));
+        if (fd !== undefined) {
+          closeSync(fd);
+        }
+      }
+    } catch (e) {
+      /* do nothing */
+    }
+  }
   console.log(`Wrote debug info to ${debugLogPath}.`);
 }
 
