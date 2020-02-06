@@ -206,7 +206,7 @@ export class EmulatorRestServer {
 
   private onAfterRequest = (req: Request, res: Response, route: Route, err): void => {
     const conversationId = getConversationId(req as ConversationAwareRequest);
-    if (!shouldPostToChat(conversationId, req.method, route, req as any)) {
+    if (!shouldPostToChat(conversationId, req.method, req as any)) {
       return;
     }
 
@@ -242,8 +242,7 @@ export class EmulatorRestServer {
 function shouldPostToChat(
   conversationId: string,
   method: string,
-  route: Route,
-  req: { body: {}; conversation: Conversation; socket: any; url: string }
+  req: Request & { conversation: Conversation; socket: any }
 ): boolean {
   const isDLine = method === 'GET' && req.socket && req.url === '/'; // just a blank ping from DLJS
   const isNotTranscript = !!conversationId && !conversationId.includes('transcript');
