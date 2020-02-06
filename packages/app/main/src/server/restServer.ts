@@ -243,9 +243,9 @@ function shouldPostToChat(
   conversationId: string,
   method: string,
   route: Route,
-  req: { body: {}; conversation: Conversation }
+  req: { body: {}; conversation: Conversation; socket: any; url: string }
 ): boolean {
-  const isDLine = method === 'GET' && route.spec.path === '/v3/directline/conversations/:conversationId/activities';
+  const isDLine = method === 'GET' && req.socket && req.url === '/'; // just a blank ping from DLJS
   const isNotTranscript = !!conversationId && !conversationId.includes('transcript');
   const { conversation } = req;
   return !isDLine && isNotTranscript && conversation && conversation.mode !== 'debug';
