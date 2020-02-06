@@ -37,7 +37,14 @@ const CopyWebpackPlugin = require('copy-webpack-plugin');
 const TerserWebpackPlugin = require('terser-webpack-plugin');
 
 const webpack = require('webpack');
-const { DllPlugin, DllReferencePlugin, NamedModulesPlugin, DefinePlugin, WatchIgnorePlugin } = webpack;
+const {
+  DllPlugin,
+  DllReferencePlugin,
+  NamedModulesPlugin,
+  DefinePlugin,
+  SourceMapDevToolPlugin,
+  WatchIgnorePlugin,
+} = webpack;
 
 const { npm_lifecycle_event = '' } = process.env;
 const manifestLocation = path.resolve('./generated');
@@ -107,8 +114,6 @@ const defaultConfig = {
     ],
   },
 
-  devtool: 'source-map',
-
   devServer: {
     hot: true,
     inline: true,
@@ -163,6 +168,7 @@ const buildConfig = mode => {
   };
   if (mode === 'development') {
     config.module.rules[0].use = use;
+    config.plugins.push(new SourceMapDevToolPlugin({}));
   } else {
     config.optimization = {
       minimizer: [
