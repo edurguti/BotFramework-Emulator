@@ -41,6 +41,7 @@ import {
   open as openDocument,
   setInspectorObjects,
   updatePendingSpeechTokenRetrieval,
+  updateSpeechAdapters,
   webChatStoreUpdated,
   webSpeechFactoryUpdated,
   ChatAction,
@@ -61,7 +62,11 @@ import {
   EmulatorMode,
   User,
 } from '@bfemulator/sdk-shared';
-import { createCognitiveServicesSpeechServicesPonyfillFactory, createDirectLine } from 'botframework-webchat';
+import {
+  createCognitiveServicesSpeechServicesPonyfillFactory,
+  createDirectLine,
+  createDirectLineSpeechAdapters,
+} from 'botframework-webchat';
 import { createStore as createWebChatStore } from 'botframework-webchat-core';
 import { call, ForkEffect, put, select, takeEvery } from 'redux-saga/effects';
 import { encode } from 'base64url';
@@ -95,6 +100,8 @@ interface BootstrapChatPayload {
   mode: EmulatorMode;
   msaAppId?: string;
   msaPassword?: string;
+  speechKey?: string;
+  speechRegion?: string;
   user: User;
 }
 
@@ -223,7 +230,17 @@ export class ChatSagas {
   }
 
   public static *bootstrapChat(payload: BootstrapChatPayload): IterableIterator<any> {
-    const { conversationId, documentId, endpointId, mode, msaAppId, msaPassword, user } = payload;
+    const {
+      conversationId,
+      documentId,
+      endpointId,
+      mode,
+      msaAppId,
+      msaPassword,
+      speechKey,
+      speechRegion,
+      user,
+    } = payload;
     // Create a new webchat store for this documentId
     yield put(webChatStoreUpdated(documentId, createWebChatStore()));
     // Each time a new chat is open, retrieve the speech token
@@ -243,9 +260,31 @@ export class ChatSagas {
       newChat(documentId, mode, {
         conversationId,
         directLine,
+        speechKey,
+        speechRegion,
         userId: user.id,
       })
     );
+
+    // DL speech
+    if (speechKey && speechRegion) {
+      yield put(updatePendingSpeechTokenRetrieval(documentId, true));
+      try {
+        const { directLine, webSpeechPonyfillFactory } = yield createDirectLineSpeechAdapters({
+          fetchCredentials: {
+            region: speechRegion,
+            subscriptionKey: speechKey,
+          },
+        });
+        yield put(updateSpeechAdapters(documentId, directLine, webSpeechPonyfillFactory));
+      } catch (e) {
+        // some error handling
+        console.log(e);
+      } finally {
+        yield put(updatePendingSpeechTokenRetrieval(documentId, false));
+        return;
+      }
+    }
 
     // initialize speech
     if (msaAppId && msaPassword) {
@@ -339,6 +378,8 @@ export class ChatSagas {
       newChat(documentId, chat.mode, {
         conversationId,
         directLine,
+        speechKey: chat.speechKey,
+        speechRegion: chat.speechRegion,
         userId,
       })
     );
@@ -353,6 +394,26 @@ export class ChatSagas {
 
     // send CU or /INSPECT open
     yield call([ChatSagas, ChatSagas.sendInitialActivity], { conversationId, members, mode: chat.mode });
+
+    // DL speech
+    if (chat.speechKey && chat.speechRegion) {
+      yield put(updatePendingSpeechTokenRetrieval(documentId, true));
+      try {
+        const { directLine, webSpeechPonyfillFactory } = yield createDirectLineSpeechAdapters({
+          fetchCredentials: {
+            region: chat.speechRegion,
+            subscriptionKey: chat.speechKey,
+          },
+        });
+        yield put(updateSpeechAdapters(documentId, directLine, webSpeechPonyfillFactory));
+      } catch (e) {
+        // some error handling
+        console.log(e);
+      } finally {
+        yield put(updatePendingSpeechTokenRetrieval(documentId, false));
+        return;
+      }
+    }
 
     // initialize speech
     if (botEndpoint.msaAppId && botEndpoint.msaPassword) {

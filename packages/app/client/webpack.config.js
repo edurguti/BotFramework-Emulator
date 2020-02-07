@@ -114,6 +114,8 @@ const defaultConfig = {
     ],
   },
 
+  devtool: 'source-map',
+
   devServer: {
     hot: true,
     inline: true,
@@ -168,7 +170,7 @@ const buildConfig = mode => {
   };
   if (mode === 'development') {
     config.module.rules[0].use = use;
-    config.plugins.push(new SourceMapDevToolPlugin({}));
+    // config.plugins.push(new SourceMapDevToolPlugin({ filename: '[file].map' }));
   } else {
     config.optimization = {
       minimizer: [

@@ -130,6 +130,8 @@ export class BotSagas {
       mode: action.payload.mode,
       msaAppId: action.payload.appId,
       msaPassword: action.payload.appPassword,
+      speechKey: action.payload.speechKey,
+      speechRegion: action.payload.speechRegion,
       user,
     });
 
